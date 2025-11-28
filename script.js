@@ -68,17 +68,46 @@ document.getElementById('notificationClose').addEventListener('click', function(
 // Обработка формы для отправки в Telegram
 const telegramForm = document.getElementById('telegramForm');
 
-telegramForm.addEventListener('submit', function(e) {
+telegramForm.addEventListener('submit', async function(e) {
     e.preventDefault();
     
-    // Ваши данные (ЗАМЕНИТЕ на правильные!)
+    // Ваши данные
     const botToken = '8520745312:AAHMU0WsPx4pnlcaD1DRwPf1AphdgE1miq0';
-    const chatID = '6812412253'; // ← ВАШ НАСТОЯЩИЙ CHAT ID!
+    const chatID = '6812412253';
     
     const name = this.name.value;
     const phone = this.phone.value;
     const messageText = this.message.value || 'Не указано';
     
-    const message = `📦 Новая заявка с сайта!\n👤 Имя: ${name}\n📞 Телефон: ${phone}\n📝 Сообщение: ${messageText}`;})
+    const message = `📦 Новая заявка с сайта!\n👤 Имя: ${name}\n📞 Телефон: ${phone}\n📝 Сообщение: ${messageText}`;
     
-    // Показываем индикатор загрузки
+    try {
+        // Показываем уведомление о отправке
+        showNotification('Отправляем заявку...', false);
+        
+        const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                chat_id: chatID,
+                text: message,
+                parse_mode: 'HTML'
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.ok) {
+            showNotification('Заявка успешно отправлена! Мы свяжемся с вами в ближайшее время.', false);
+            telegramForm.reset(); // Очищаем форму
+        } else {
+            showNotification('Ошибка при отправке заявки. Пожалуйста, позвоните нам напрямую.', true);
+            console.error('Telegram API error:', result);
+        }
+    } catch (error) {
+        showNotification('Ошибка соединения. Пожалуйста, попробуйте еще раз или позвоните нам.', true);
+        console.error('Fetch error:', error);
+    }
+});
